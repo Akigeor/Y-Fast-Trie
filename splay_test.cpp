@@ -25,7 +25,7 @@ int main()
 	cout << it -> data << endl;  //cout 666
 	it = t.previous(it);  //it -> data == 450
 	it = t.next(it);  //it -> data == 666
-	it = t.next(it);  //it -> data == nullptr
+	it = t.next(it);  //it == nullptr
 	it = t.begin();  //it -> data == -1
 
 	////////// 以下是测试用代码
