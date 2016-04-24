@@ -4,16 +4,17 @@
 #define SZ(x) ((x) ? ((x) -> sz) : 0)
 namespace sjtu
 {
-	template<class T, class Compare = std::less<T>>
+	template<class T, class T2, class Compare = std::less<T>>
 	class Splay
 	{
 		class Node
 		{
 		public:
-			T data;
+			T key;
 			Node *ch[2], *p;
+			T2 data;
 			int sz;
-			Node(const T &data = T(), Node *p = nullptr) : data(data), p(p)
+			Node(const T &key = T(), Node *p = nullptr, const T2 &data = T2()) : key(key), p(p), data(data)
 			{
 				ch[0] = ch[1] = nullptr;
 				sz = 1;
@@ -60,8 +61,8 @@ namespace sjtu
 			Node *las = root -> p;
 			while (*cur)
 			{
-				bool s = Compare()((*cur) -> data, x);
-				bool t = Compare()(x, (*cur) -> data);
+				bool s = Compare()((*cur) -> key, x);
+				bool t = Compare()(x, (*cur) -> key);
 				if (!s && !t) return std::make_pair(cur, las);
 				las = *cur;
 				cur = &((*cur) -> ch[s]);
@@ -71,7 +72,7 @@ namespace sjtu
 		void insert_dfs(Node *x)
 		{
 			if (!x) return;
-			insert(x -> data);
+			insert(x -> key, x -> data);
 			insert_dfs(x -> ch[0]);
 			insert_dfs(x -> ch[1]);
 		}
@@ -113,10 +114,17 @@ namespace sjtu
 	public:
 		Splay() {root = nullptr;}
 		~Splay() {destory();}
-		void insert(const T &x)
+		void insert(const T &x, const T2 &val)
 		{
 			auto p = find(x, root);
-			if (!*p.first) *p.first = new Node(x, p.second);
+			if (!*p.first)
+			{
+				*p.first = new Node(x, p.second, val);
+			}
+			else
+			{
+				(*p.first) -> data = val;
+			}
 			splay(*p.first);
 		}
 		void erase(const T &x)
