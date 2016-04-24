@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
+#include <memory>
 #define SZ(x) ((x) ? ((x) -> sz) : 0)
 namespace sjtu
 {
@@ -114,6 +115,38 @@ namespace sjtu
 	public:
 		Splay() {root = nullptr;}
 		~Splay() {destory();}
+		Node *geq(const T &x)
+		{
+			if (!root) return nullptr;
+			Node *cur = root;
+			Node *ans = nullptr;
+			while (cur)
+			{
+				bool s = Compare()(cur -> key, x);
+				bool t = Compare()(x, cur -> key);
+				if (!s && !t) return cur;
+				if (!s) ans = cur;
+				cur = cur -> ch[s];
+			}
+			if (ans) splay(ans); else ans = rbegin();
+			return ans;
+		}
+		Node *leq(const T &x)
+		{
+			if (!root) return nullptr;
+			Node *cur = root;
+			Node *ans = nullptr;
+			while (cur)
+			{
+				bool s = Compare()(cur -> key, x);
+				bool t = Compare()(x, cur -> key);
+				if (!s && !t) return cur;
+				if (s) ans = cur;
+				cur = cur -> ch[s];
+			}
+			if (ans) splay(ans); else ans = begin();
+			return ans;
+		}
 		void insert(const T &x, const T2 &val)
 		{
 			auto p = find(x, root);
@@ -126,6 +159,14 @@ namespace sjtu
 				(*p.first) -> data = val;
 			}
 			splay(*p.first);
+		}
+		T min()
+		{
+			return begin() -> key;
+		}
+		T max()
+		{
+			return rbegin() -> key;
 		}
 		void erase(const T &x)
 		{
@@ -200,6 +241,31 @@ namespace sjtu
 			for (tmp = root; tmp -> ch[0]; tmp = tmp -> ch[0]);
 			return tmp;
 		}
+		Node *end()
+		{
+			return nullptr;
+		}
+		Node *rbegin()
+		{
+			if (!root) return nullptr;
+			Node* tmp;
+			for (tmp = root; tmp -> ch[1]; tmp = tmp -> ch[1]);
+			return tmp;
+		}
 	};
+	template<class T, class T2, class Compare = std::less<T>>
+	Splay<T, T2, Compare>* merge(Splay<T, T2, Compare> *a, Splay<T, T2, Compare> *b)
+	{
+		a -> merge(*b);
+		delete b;
+		return a;
+	}
+	template<class T, class T2, class Compare = std::less<T>>
+	std::pair<Splay<T, T2, Compare>*, Splay<T, T2, Compare>*> split(Splay<T, T2, Compare> *a)
+	{
+		auto b = new Splay<T, T2, Compare>();
+		a -> split(*b);
+		return std::make_pair(a, b);
+	}
 };
 
