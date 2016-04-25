@@ -3,13 +3,9 @@
 #include <vector>
 #include <cstdlib>
 #include <ctime>
+#include <map> // for test
 
-const int total_prime = 30;
-const unsigned long long prime[30] = {
-	5641, 5647, 5651, 5653, 5657, 5659, 5669, 5683, 5689, 5693,
-	7307, 7309, 7321, 7331, 7333, 7349, 7351, 7369, 7393, 7411,
-	9127, 9133, 9137, 9151, 9157, 9161, 9173, 9181, 9187, 9199
-};
+namespace sjtu {
 
 template<class Temp>
 class unordered_map{
@@ -18,6 +14,7 @@ public:
 	std::vector<std::vector<unsigned long long> > T2; // the key of stored things
 	std::vector<std::vector<Temp> > value; // the key of stored things
 	std::vector<std::pair<unsigned long long, Temp> > L; // a link for some elements
+	std::vector<std::vector<std::pair<unsigned long long, Temp> > > LL; // a link for some elements
 	std::vector<unsigned long long> m1, m2; // random prime for second-level bucket
 	std::vector<int> s; // size of each second-level bucket
 	std::vector<int> b; // number of elements
@@ -29,8 +26,29 @@ public:
 	int sum_sj; // sum of all s[j]
 	int sM; // number of buckets now
 	
+	static int prime[80005];
+	static bool flag[1000001];
+	static int total_prime;
+	
+	void prepare() {
+		for (int i = 2; i <= 1000000; i ++) {
+			if (!flag[i]) {
+				prime[total_prime ++] = i;
+			}
+			for (int j = 0; j < total_prime; j ++) {
+				if (i * prime[j] > 1000000) break;
+				flag[i * prime[j]] = 1;
+				if (i % prime[j] == 0) break;
+			}
+		}
+	}
+	
 	unordered_map() {
-		srand(time(0));
+		if (!total_prime)
+		{
+			srand(time(0));
+			prepare();
+		}
 		magic1 = prime[rand() % total_prime];
 		magic2 = prime[rand() % total_prime];
 		while (magic2 == magic1) {
@@ -117,8 +135,14 @@ public:
 				sM ++;
 			}
 		} while (sum_sj > 32 * M * M / sM + 4 * M);
+		LL.clear();
+		LL.resize(M);
+		for (int i = 0; i < (int)L.size(); i ++) {
+			LL[hash(L[i].first)].push_back(L[i]);
+		}
 		for (int j = 0; j < M; j ++) {
 			if (tmp[j] == 0) continue;
+			T[j].clear();
 			T[j].resize(s[j]);
 			do {
 				m1[j] = prime[rand() % total_prime];
@@ -126,15 +150,15 @@ public:
 				while (m1[j] == m2[j]) {
 					m2[j] = prime[rand() % total_prime];
 				}
-			} while (!is_injective(j, L));
+			} while (!is_injective(j, LL[j]));
 			T[j].clear();
 			T[j].resize(s[j]);
 			T2[j].resize(s[j]);
 			value[j].resize(s[j]);
-			for (int i = 0; i < (int)L.size(); i ++) {
-				T[j][hash_j(L[i].first, j)] = 1;
-				T2[j][hash_j(L[i].first, j)] = L[i].first;
-				value[j][hash_j(L[i].first, j)] = L[i].second;
+			for (int i = 0; i < (int)LL[j].size(); i ++) {
+				T[j][hash_j(LL[j][i].first, j)] = 1;
+				T2[j][hash_j(LL[j][i].first, j)] = LL[j][i].first;
+				value[j][hash_j(LL[j][i].first, j)] = LL[j][i].second;
 			}
 		}
 	}
@@ -146,6 +170,7 @@ public:
 	}
 	
 	bool find(int x) {
+		if (M == 0) return 0;
 		int j = hash(x); // position in first-level
 		int k = hash_j(x, j);
 		if (k == -1) return 0;
@@ -228,6 +253,18 @@ public:
 		}
 	}
 	
+	Temp & operator[](const int &x) {		
+		if (find(x)) {
+			int j = hash(x); // position in first-level
+			int k = hash_j(x, j);
+			return value[j][k];
+		}
+		insert(std::make_pair(x, Temp()));
+		int j = hash(x); // position in first-level
+		int k = hash_j(x, j);
+		return value[j][k];
+	}
+	
 	void erase(int x) {
 		count ++;
 		int j = hash(x);
@@ -240,18 +277,50 @@ public:
 	}
 };
 
+template<class Temp>
+int unordered_map<Temp>::total_prime = 0;
+template<class Temp>
+int unordered_map<Temp>::prime[] = {0};
+template<class Temp>
+bool unordered_map<Temp>::flag[] = {0};
+
+};
+
 /*
-int a[15];
+int a[100005];
 
 int main() {
-	unordered_map<int*> map;
-	for (int i = 1; i <= 10; i ++) a[i] = i;
-	for (int i = 1; i <= 10; i ++) map.insert(std::make_pair(a[i], &a[i]));
-	for (int i = 1; i <= 10; i ++) 
-		if (map.find(a[i])) printf("%d %d\n", i, map.locate(a[i]));
-	for (int i = 1; i <= 5; i ++) map.erase(a[i]);
-	for (int i = 1; i <= 10; i ++) 
-		if (map.find(a[i])) printf("%d %d\n", i, map.locate(a[i]));
+	freopen("test.out", "w", stdout);
+	for (int n = 25; n <= 3000; n ++) {
+		printf("n = %d\n", n);
+		unordered_map<int> map;
+		std::map<int, int> M;
+		for (int i = 1; i <= n; i ++)
+			a[i] = rand();
+		printf("FUZHI complete.\n");
+		for (int i = 1; i <= n; i ++) {
+			map[i] = a[i];
+			M[i] = a[i];
+		}
+		printf("Insert complete.\n");
+		for (int i = 1; i <= n * 10; i ++) {
+			//printf("%d\n", i);
+			int x = rand() % n + 1;
+			if (map[x] != M[x]) puts("Wrong Answer(exist).\n");
+		}
+		printf("Ask1 complete.\n");
+		for (int i = 1; i <= n * 10; i ++) {
+			//printf("%d\n", i);
+			int x = rand();
+			if (map.find(x) != M.count(x)) {
+				printf("%d %d\n", map.find(x), M.count(x));
+				int k = 1;
+				map.find(x);
+				puts("Wrong Answer(random number).\n");
+			}
+		}
+		printf("Ask2 complete.\n");
+	}
 	return 0;
 }
 */
