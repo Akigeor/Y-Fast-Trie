@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <utility>
 #include <cstdio>
 #include <memory>
 #define SZ(x) ((x) ? ((x) -> sz) : 0)
@@ -115,37 +116,37 @@ namespace sjtu
 	public:
 		Splay() {root = nullptr;}
 		~Splay() {destory();}
-		Node *geq(const T &x)
+		std :: pair<T,T2> geq(const T &x)
 		{
-			if (!root) return nullptr;
+			if (!root) return std :: make_pair(T(),T2());
 			Node *cur = root;
 			Node *ans = nullptr;
 			while (cur)
 			{
 				bool s = Compare()(cur -> key, x);
 				bool t = Compare()(x, cur -> key);
-				if (!s && !t) return cur;
+				if (!s && !t) return std :: make_pair(cur -> key,cur -> data);
 				if (!s) ans = cur;
 				cur = cur -> ch[s];
 			}
 			if (ans) splay(ans); else ans = rbegin();
-			return ans;
+			return std :: make_pair(ans -> key,ans -> data);
 		}
-		Node *leq(const T &x)
+		std :: pair<T,T2> leq(const T &x)
 		{
-			if (!root) return nullptr;
+			if (!root) return std :: make_pair(T(),T2());
 			Node *cur = root;
 			Node *ans = nullptr;
 			while (cur)
 			{
 				bool s = Compare()(cur -> key, x);
 				bool t = Compare()(x, cur -> key);
-				if (!s && !t) return cur;
+				if (!s && !t) return std :: make_pair(cur -> key,cur -> data);
 				if (s) ans = cur;
 				cur = cur -> ch[s];
 			}
 			if (ans) splay(ans); else ans = begin();
-			return ans;
+			return std :: make_pair(ans -> key,ans -> data);
 		}
 		void insert(const T &x, const T2 &val)
 		{
@@ -206,9 +207,9 @@ namespace sjtu
 			if (other.root) (other.root) -> p = root -> ch[1] = nullptr;
 			root -> update();
 		}
-		Node *find(const T &x)
+		T2 find(const T &x)
 		{
-			return *find(x, root).first;
+			return (*(find(x, root).first)) -> data;
 		}
 		size_t size()
 		{
@@ -253,14 +254,14 @@ namespace sjtu
 			return tmp;
 		}
 	};
-	template<class T, class T2, class Compare = std::less<T>>
+	template<class T, class T2, class Compare = std::less<T> >
 	Splay<T, T2, Compare>* merge(Splay<T, T2, Compare> *a, Splay<T, T2, Compare> *b)
 	{
 		a -> merge(*b);
 		delete b;
 		return a;
 	}
-	template<class T, class T2, class Compare = std::less<T>>
+	template<class T, class T2, class Compare = std::less<T> >
 	std::pair<Splay<T, T2, Compare>*, Splay<T, T2, Compare>*> split(Splay<T, T2, Compare> *a)
 	{
 		auto b = new Splay<T, T2, Compare>();
