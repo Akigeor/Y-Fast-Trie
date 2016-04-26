@@ -46,7 +46,7 @@ public:
 	unordered_map() {
 		if (!total_prime)
 		{
-			srand(time(0));
+			//srand(time(0));
 			prepare();
 		}
 		magic1 = prime[rand() % total_prime];
@@ -85,7 +85,7 @@ public:
 	bool is_injective(int j, std::vector<std::pair<unsigned long long, Temp> > &vec) {
 		std::vector<int> tmp(s[j]);
 		for (int i = 0; i < (int)vec.size(); i ++) {
-			int HASH = hash_j(vec[i].first, j);
+			int HASH = hash_j(vec[i].first, j); // hui bu hui shi wei jing di yi ceng hash chu li
 			if (tmp[HASH] == 0) 
 				tmp[HASH] = 1;
 			else 
@@ -95,6 +95,7 @@ public:
 	}
 	
 	void full_re_hash(int x, Temp y) {
+		//printf("in full\n");
 		L.clear();
 		for (int i = 0; i < M; i ++) 
 			if ((int)T[i].size() > 0) 
@@ -161,6 +162,7 @@ public:
 				value[j][hash_j(LL[j][i].first, j)] = LL[j][i].second;
 			}
 		}
+		//printf("out full\n");
 	}
 	
 	int find_second_address(int j, int x) {
@@ -170,10 +172,11 @@ public:
 	}
 	
 	bool find(int x) {
-		if (M == 0) return 0;
+		//printf("in find\n");
+		if (M == 0) return 0;//puts("out find") * 0;
 		int j = hash(x); // position in first-level
 		int k = hash_j(x, j);
-		if (k == -1) return 0;
+		if (k == -1) return 0;//puts("out find") * 0;
 		if (find_second_address(j, k) == x) return 1;
 		return 0;
 	}
@@ -199,7 +202,9 @@ public:
 				}
 				if (b[j] <= m[j]) {
 					if (k == -1) {
-						T[j][hash_j(x.first, j)] = x.first;
+						T[j][hash_j(x.first, j)] = 1;
+						T2[j][hash_j(x.first, j)] = x.first;
+						value[j][hash_j(x.first, j)] = x.second;
 						L.push_back(std::make_pair(x.first, x.second));
 					} else {
 						L.push_back(std::make_pair(x.first, x.second));
@@ -253,7 +258,7 @@ public:
 		}
 	}
 	
-	Temp & operator[](const int &x) {		
+	Temp & operator[](const int &x) {
 		if (find(x)) {
 			int j = hash(x); // position in first-level
 			int k = hash_j(x, j);

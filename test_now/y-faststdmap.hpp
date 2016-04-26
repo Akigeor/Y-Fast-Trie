@@ -42,11 +42,13 @@ class xfast_trie{
 		int logM,B;
 		xfast_node<T>* root;
 		unordered_map<xfast_node<T>*>* LSS;
+		//std::map<int, xfast_node<T>*>* LSS;
 	public:
 		xfast_trie(int M){
 			B = M;
 			for (logM = 1;(1 << logM) <= M;logM ++);
 			LSS = new unordered_map<xfast_node<T>*> [logM + 1];
+			//LSS = new std::map<int, xfast_node<T>*> [logM + 1];
 			root = nullptr;
 		}
 		void dfs(xfast_node<T>* &u,int dep){
@@ -68,6 +70,7 @@ class xfast_trie{
 			while (l + 1 < r){
 				int mid = (l + r) >> 1;
 				if (!LSS[mid].find(key >> mid)) l = mid;
+				//if (LSS[mid].find(key >> mid) == LSS[mid].end()) l = mid;
 				else r = mid;
 			}
 			xfast_node<T>* u = LSS[r][key >> r];
@@ -107,6 +110,7 @@ class xfast_trie{
 			while (l + 1 < r){
 				int mid = (l + r) >> 1;
 				if (!LSS[mid].find(key >> mid)) l = mid;
+				//if (LSS[mid].find(key >> mid) == LSS[mid].end()) l = mid;
 				else r = mid;
 			}
 			xfast_node<T>* u = LSS[r][key >> r];

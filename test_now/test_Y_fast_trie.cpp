@@ -18,8 +18,8 @@ int main() {
 		findsuc(key) = pair<bool, pair<key, value> >;
 	*/
 	//srand(time(0));	
-	n = 100;
-	int M = 1e6;
+	n = 1000;
+	int M = 2000;
 	for (int i = 1; i <= n; i ++) a[i] = rand() % M;
 	for (int i = 1; i <= n; i ++) b[i] = (char)(rand() % 20 + 90);
 	
@@ -27,6 +27,9 @@ int main() {
 	sjtu::xfast_trie<char> my_map(M);
 	std::map<int, char> std_map;
 	for (int i = 1; i <= n; i ++) {
+		printf("%d\n", i);
+		if (i == 25)
+			int k = 1;
 		my_map.insert(a[i], b[i]);
 		if (!std_map.count(a[i])) std_map[a[i]] = b[i];
 	}
