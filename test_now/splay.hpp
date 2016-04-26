@@ -86,7 +86,7 @@ namespace sjtu
 				root = y;
 				return;
 			}
-			if (root -> sz < y -> sz) std::swap(root, y);
+			//if (root -> sz < y -> sz) std::swap(root, y);
 			insert_dfs(y);
 		}
 		Node *rank(Node *x, int cnt)
@@ -258,7 +258,7 @@ namespace sjtu
 	Splay<T, T2, Compare>* merge(Splay<T, T2, Compare> *a, Splay<T, T2, Compare> *b)
 	{
 		a -> merge(*b);
-		delete b;
+		//delete b;
 		return a;
 	}
 	template<class T, class T2, class Compare = std::less<T> >
