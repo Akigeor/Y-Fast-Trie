@@ -38,11 +38,12 @@ class xfast_trie{
 	friend xfast_node<T>;
 	friend sjtu :: Splay<int,T>;
 	private:
-		int logM;
+		int logM,B;
 		xfast_node<T>* root;
 		sjtu :: unordered_map<xfast_node<T>*>* LSS;
 	public:
 		xfast_trie(int M){
+			B = M;
 			for (logM = 1;(1 << logM) <= M;logM ++);
 			LSS = new sjtu :: unordered_map<xfast_node<T>*> [logM + 1];
 			root = nullptr;
@@ -73,7 +74,10 @@ class xfast_trie{
 				else return u->des[0];
 			}else return u;
 		}
-		std :: pair<bool,std :: pair<int,T> >findsuc(const int &key){
+		std :: pair<bool,std :: pair<int,T> >findsuc(int key){
+			key ++;
+			if (key < 0) key = 0;
+			if (key >= B) return std :: make_pair(false,std :: make_pair(0,T()));
 			xfast_node<T>* u = predecessor(key);
 			xfast_node<T>* v;
 			if (u != nullptr) v = u->nxt;
@@ -109,7 +113,10 @@ class xfast_trie{
 				else return u->des[0]->pre;
 			}else return u;
 		}
-		std :: pair<bool,std :: pair<int,T> >findpre(const int &key){
+		std :: pair<bool,std :: pair<int,T> >findpre(int key){
+			key --;
+			if (key >= B) key = B - 1;
+			if (key < 0) return std :: make_pair(false,std :: make_pair(0,T()));
 			xfast_node<T>* v = predecessor(key);
 			std :: pair<int,T> before;
 			bool have = false;
@@ -184,7 +191,8 @@ class xfast_trie{
 					xfast_node<T> *v = u->nxt;
 					tmp->nxt = v;
 					if (v != nullptr) v->pre = tmp;
-					delete_xfast_node(root,*(u->key),logM);
+					int waste = *(u->key);
+					delete_xfast_node(root,waste,logM);
 					u = tmp;
 				}else{
 					xfast_node<T> *v = u->nxt->nxt;
@@ -192,7 +200,8 @@ class xfast_trie{
 					u->bstroot = sjtu :: merge(u->bstroot,u->nxt->bstroot);
 					u->nxt = v;
 					if (v != nullptr) v->pre = u;
-					delete_xfast_node(root,*(tmp->key),logM);
+					int waste = *(tmp->key);
+					delete_xfast_node(root,waste,logM);
 				}
 			}
 			std :: pair<sjtu :: Splay<int,T>*,sjtu :: Splay<int,T>* > change;
@@ -203,18 +212,19 @@ class xfast_trie{
 				if (ss != nullptr) ss->pre = pp;
 				if (pp != nullptr) pp->nxt = ss;
 				change = sjtu :: split(u->bstroot);
-				delete_xfast_node(root,*(u->key),logM);
+				int waste = *(u->key);
+				delete_xfast_node(root,waste,logM);
 				now = new xfast_node<T>((change.first)->min());
 				now->bstroot = change.first;
 				walk(root,*(now->key),logM);
-				pp->nxt = now;
+				if (pp != nullptr) pp->nxt = now;
 				now->pre = pp;
 				now2 = new xfast_node<T>((change.second)->min());
 				now2->bstroot = change.second;
 				now->nxt = now2;
 				now2->pre = now;
 				now2->nxt = ss;
-				ss->pre = now2;
+				if (ss != nullptr) ss->pre = now2;
 				walk(root,*(now2->key),logM);
 			}
 		}
@@ -253,12 +263,14 @@ class xfast_trie{
 			if (tmp->size() == 0){
 				if (pp != nullptr) pp->nxt = ss;
 				if (ss != nullptr) ss->pre = pp;
-				delete_xfast_node(root,*(u->key),logM);
+				int waste = *(u->key);
+				delete_xfast_node(root,waste,logM);
 			}else{
 				if (tmp->min() != (*(u->key))){
 					if (pp != nullptr) pp->nxt = ss;
-					if (ss != nullptr) ss->pre = pp;					
-					delete_xfast_node(root,*(u->key),logM);
+					if (ss != nullptr) ss->pre = pp;
+					int waste = *(u->key);
+					delete_xfast_node(root,waste,logM);
 					now = new xfast_node<T>(tmp->min());
 					now->bstroot = tmp;
 					walk(root,*(now->key),logM);
