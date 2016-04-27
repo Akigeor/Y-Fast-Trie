@@ -15,10 +15,13 @@ public:
 	std::vector<std::vector<Temp> > value; // the key of stored things
 	std::vector<std::pair<unsigned long long, Temp> > L; // a link for some elements
 	std::vector<std::vector<std::pair<unsigned long long, Temp> > > LL; // a link for some elements
-	std::vector<unsigned long long> m1, m2; // random prime for second-level bucket
+	std::vector<unsigned long long> m1, m2, MOD; // random prime for second-level bucket
 	std::vector<int> s; // size of each second-level bucket
 	std::vector<int> b; // number of elements
 	std::vector<int> m; // a bound about T[j]
+	std::vector<int> cur; // a bound about T[j]
+	int BIGMOD;
+	int now_cur; // random seed
 	int count; // counter
 	int M; // a bound for all elements
 	int c = 5; // a constant
@@ -54,6 +57,8 @@ public:
 		while (magic2 == magic1) {
 			magic2 = prime[rand() % total_prime];
 		}
+		now_cur = 0;
+		BIGMOD = 0;
 		count = 0;
 		M = 0;
 		T.resize(0);
@@ -62,6 +67,7 @@ public:
 		L.resize(0);
 		b.resize(0);
 		s.resize(0);
+		cur.resize(0);
 		m.resize(0);
 		m1.resize(0);
 		m2.resize(0);
@@ -69,17 +75,76 @@ public:
 		sM = 0;
 	}
 	
-	int hash(int x) {
+	unsigned long long normal(int x, int m1, int m2, int mod) {
 		unsigned long long result = x;
-		result = (result * magic1 + magic2) % M;
+		return (result * m1 + m2);
+	}
+	
+	unsigned long long DJB(int x, int magic, int mod) {
+		unsigned long long result = 5381;		
+		while (x) {
+			result = ((result << 5) + result) + x % mod;
+			x /= mod;
+		}
 		return result;
+	}
+	
+	unsigned long long DEK(int x, int magic, int mod) {
+		unsigned long long result = magic;	
+		while (x) {
+			result = ((result << 5) ^ (result >> 27)) ^ (x % mod);
+			x /= mod;
+		}
+		return result;
+	}
+	
+	unsigned long long SDBM(int x, int magic, int mod) {
+		unsigned long long result = magic;	
+		while (x) {
+			result = ((result << 6) + (result << 16)) - result + x % mod;
+			x /= mod;
+		}
+		return result;
+	}
+	
+	unsigned long long BKDR(int x, int magic, int mod) {
+		magic = 13131;
+		unsigned long long result = 0;
+		while (x) {
+			result = (result * magic) + x % mod;
+			x /= mod;
+		}
+		return result;
+	}
+	
+	unsigned long long JS(int x, int magic, int mod) {
+		unsigned long long result = 1315423911;
+		while (x) {
+			result ^= ((result << 5) + x % mod + (result >> 2));
+			x /= mod;
+		}
+		return result;
+	}
+	
+	int hash(int x) {
+		x = x * x; 
+		if (now_cur == 0) return normal(x, magic1, magic2, BIGMOD) % M;
+		if (now_cur == 1) return DJB(x, magic1, BIGMOD) % M;
+		if (now_cur == 2) return DEK(x, magic1, BIGMOD) % M;
+		if (now_cur == 3) return SDBM(x, magic1, BIGMOD) % M;
+		if (now_cur == 4) return JS(x, magic1, BIGMOD) % M;
+		if (now_cur == 5) return BKDR(x, magic1, BIGMOD) % M;
 	}
 	
 	int hash_j(int x, int j) {
 		if (T.size() == 0 || s[j] == 0) return -1;
-		unsigned long long result = x;
-		result = (result * m1[j] + m2[j]) % s[j];
-		return result;
+		x = x * x;
+		if (cur[j] == 0) return normal(x, m1[j], m2[j], MOD[j]) % s[j];
+		if (cur[j] == 1) return DJB(x, m1[j], MOD[j]) % s[j];
+		if (cur[j] == 2) return DEK(x, m1[j], MOD[j]) % s[j];
+		if (cur[j] == 3) return SDBM(x, m1[j], MOD[j]) % s[j];
+		if (cur[j] == 4) return JS(x, m1[j], MOD[j]) % s[j];
+		if (cur[j] == 5) return BKDR(x, m1[j], MOD[j]) % s[j];
 	}
 	
 	bool is_injective(int j, std::vector<std::pair<unsigned long long, Temp> > &vec) {
@@ -104,8 +169,10 @@ public:
 		count = (int)L.size();
 		M = (1 + c) * std::max(count, 4);
 		b.resize(M);
+		cur.resize(M);
 		m.resize(M);
 		s.resize(M);
+		MOD.resize(M);
 		m1.resize(M);
 		m2.resize(M);
 		T.clear();
@@ -114,6 +181,8 @@ public:
 		value.resize(M);
 		std::vector<int> tmp(M);
 		do {
+			now_cur = rand() % 6;
+			BIGMOD = prime[rand() % 10 + 1];
 			tmp.clear();
 			tmp.resize(M);
 			magic1 = prime[rand() % total_prime];
@@ -145,6 +214,8 @@ public:
 			T[j].clear();
 			T[j].resize(s[j]);
 			do {
+				cur[j] = rand() % 6;
+				MOD[j] = prime[rand() % 10 + 1];
 				m1[j] = prime[rand() % total_prime];
 				m2[j] = prime[rand() % total_prime];
 				while (m1[j] == m2[j]) {
@@ -189,6 +260,7 @@ public:
 		if (count > M) {
 			full_re_hash(x.first, x.second);
 		} else {
+			//for (int i = 0; i < M; i ++) printf("b[%d] = %d\n", i, b[i]);
 			int j = hash(x.first);
 			int k = find_second_address(j, hash_j(x.first, j));
 			if (k != x.first) {
@@ -199,12 +271,15 @@ public:
 				}
 				if (b[j] <= m[j]) {
 					if (k == -1) {
-						T[j][hash_j(x.first, j)] = x.first;
-						L.push_back(std::make_pair(x.first, x.second));
+						T[j][hash_j(x.first, j)] = 1;
+						T2[j][hash_j(x.first, j)] = x.first;
+						value[j][hash_j(x.first, j)] = x.second;
 					} else {
 						L.push_back(std::make_pair(x.first, x.second));
 						b[j] = L.size();
 						do {
+							cur[j] = rand() % 6;
+							MOD[j] = prime[rand() % 10 + 1];
 							m1[j] = prime[rand() % total_prime];
 							m2[j] = prime[rand() % total_prime];
 							while (m1[j] == m2[j]) {
@@ -224,12 +299,16 @@ public:
 				} else {
 					m[j] = 2 * std::max(1, m[j]);
 					sum_sj -= s[j];
+					if (s[j] != 0) sM --;
 					s[j] = 2 * m[j] * (m[j] - 1);
 					sum_sj += s[j];
-					if (sum_sj <= 32 * M * M / sM + 4 * M) {
+					sM ++;
+					if (sum_sj <= 32ll * M * M / sM + 4 * M) {
 						L.push_back(x);
-						b[j] = L.size();						
+						b[j] = L.size();					
 						do {
+							MOD[j] = prime[rand() % 10 + 1];
+							cur[j] = rand() % 6;
 							m1[j] = prime[rand() % total_prime];
 							m2[j] = prime[rand() % total_prime];
 							while (m1[j] == m2[j]) {
@@ -253,7 +332,7 @@ public:
 		}
 	}
 	
-	Temp & operator[](const int &x) {		
+	Temp & operator[](const int &x) {
 		if (find(x)) {
 			int j = hash(x); // position in first-level
 			int k = hash_j(x, j);
