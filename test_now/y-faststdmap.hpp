@@ -4,7 +4,8 @@
 #include<cstddef>
 #include<algorithm>
 #include<functional>
-#include<map>
+//#include<map>
+#include "map.hpp"
 #include "splay.hpp"
 
 namespace sjtu{
@@ -40,44 +41,36 @@ class xfast_trie{
 	private:
 		int logM,B;
 		xfast_node<T>* root;
-		std :: map<int,xfast_node<T>*>* LSS;
+		unordered_map<xfast_node<T>*>* LSS;
+		//std::map<int, xfast_node<T>*>* LSS;
 	public:
 		xfast_trie(int M){
 			B = M;
 			for (logM = 1;(1 << logM) <= M;logM ++);
-			printf("logM = %d\n",logM);
-			LSS = new std :: map<int,xfast_node<T>*> [logM + 1];
+			LSS = new unordered_map<xfast_node<T>*> [logM + 1];
+			//LSS = new std::map<int, xfast_node<T>*> [logM + 1];
 			root = nullptr;
 		}
 		void dfs(xfast_node<T>* &u,int dep){
-			//printf("%d \n",dep);
 			if (u == nullptr) return;
 			if (u->son[0] != nullptr) dfs(u->son[0],dep - 1);
 			if (u->son[1] != nullptr) dfs(u->son[1],dep - 1);
-			printf("key = %d\n",*(u->key));
 			int waste = *(u->key);
 			LSS[dep].erase(waste);
-			printf("start %d\n",dep);
-			if (u->key == nullptr) printf("play game ganasdansdi a\n");
 			if ((*(u->key)) >= 100) 
-				printf("caonima\n");
-			//delete u->key;
-			printf("finsih deleda key\n");
 			if (dep == 0 && u->bstroot != nullptr) delete u->bstroot;
 			u = nullptr;
-			printf("finish dep\n");
 		}
 		~xfast_trie(){
-			printf("start fuck\n");
-			//printf("asdasdad                                      %d\n",check(root));
 			//dfs(root,logM);
 		}
 		xfast_node<T>* successor(int key){
 			if (root == nullptr) return nullptr;
 			int l = -1,r = logM;
 			while (l + 1 < r){
-				int mid = l + r >> 1;
-				if (LSS[mid].find(key >> mid) == LSS[mid].end()) l = mid;
+				int mid = (l + r) >> 1;
+				if (!LSS[mid].find(key >> mid)) l = mid;
+				//if (LSS[mid].find(key >> mid) == LSS[mid].end()) l = mid;
 				else r = mid;
 			}
 			xfast_node<T>* u = LSS[r][key >> r];
@@ -113,25 +106,22 @@ class xfast_trie{
 		}
 		xfast_node<T>* predecessor(int key){
 			if (root == nullptr) return nullptr;
-			//printf("startfind\n");
 			int l = -1,r = logM;
 			while (l + 1 < r){
-				int mid = l + r >> 1;
-				if (LSS[mid].find(key >> mid) == LSS[mid].end()) l = mid;
+				int mid = (l + r) >> 1;
+				if (!LSS[mid].find(key >> mid)) l = mid;
+				//if (LSS[mid].find(key >> mid) == LSS[mid].end()) l = mid;
 				else r = mid;
 			}
 			xfast_node<T>* u = LSS[r][key >> r];
 			if (r){
 				if (u->son[1] == nullptr){
-					//printf("finish find\n");
 					return u->des[1];
 				}
 				else{
-					//printf("finish find\n");
 					return u->des[0]->pre;
 				}
 			}else{
-				//printf("finish find\n");
 				return u;
 			}
 		}
@@ -180,10 +170,9 @@ class xfast_trie{
 			}
 			if (u == nullptr){
 				u = new xfast_node<T>(key >> dep);
-				assert((*(u->key)) < 100);
 				LSS[dep][key >> dep] = u;
 			}
-			if ((key >> dep - 1) % 2 == 1) walk(u->son[1],key,dep - 1);
+			if ((key >> (dep - 1)) % 2 == 1) walk(u->son[1],key,dep - 1);
 			else walk(u->son[0],key,dep - 1);
 			updatedes(u,dep);
 		}
@@ -194,7 +183,7 @@ class xfast_trie{
 				u = nullptr;
 				return;
 			}
-			if ((key >> dep - 1) % 2 == 1) delete_xfast_node(u->son[1],key,dep - 1);
+			if ((key >> (dep - 1)) % 2 == 1) delete_xfast_node(u->son[1],key,dep - 1);
 			else delete_xfast_node(u->son[0],key,dep - 1);
 			if (u->son[0] == nullptr && u->son[1] == nullptr){
 				LSS[dep].erase(key >> dep);
@@ -209,22 +198,15 @@ class xfast_trie{
 			if (u->bstroot->size() < logM / 4){
 				if (u->pre == nullptr && u->nxt == nullptr) return;
 				if (u->pre != nullptr){			
-					//printf("start merge %d\n",u->bstroot->size());
-					//printf("%d %d\n",u->pre->bstroot->size(),u->bstroot->size());
 					u->pre->bstroot = sjtu :: merge(u->pre->bstroot,u->bstroot);
 					u->bstroot = nullptr;
-					//printf("finish merge\n");
 					tmp = u->pre;
 					xfast_node<T> *v = u->nxt;
 					tmp->nxt = v;
 					if (v != nullptr) v->pre = tmp;
 					int waste = *(u->key);
-					//printf("start delete\n");
 					delete_xfast_node(root,waste,logM);
-					//if (count(waste) != 0) printf("....................\n");
-					//printf("finish delete\n");
 					u = tmp;
-					//if (u -> bstroot == nullptr) printf("caonima *****************\n");
 				}else{
 					xfast_node<T> *v = u->nxt->nxt;
 					tmp = u->nxt;
@@ -233,15 +215,10 @@ class xfast_trie{
 					u->nxt = v;
 					if (v != nullptr) v->pre = u;
 					int waste = *(tmp->key);
-					//printf("start delete\n");
 					delete_xfast_node(root,waste,logM);
-					//if (count(waste) != 0) printf(".................................\n");
-					//if (u -> bstroot == nullptr) printf("caonima **************\n");
-					//printf("finish delete\n");
 				}
 			}
 			std :: pair<sjtu :: Splay<int,T>*,sjtu :: Splay<int,T>* > change;
-			//printf("start split\n");
 			if (u->bstroot->size() > 2 * logM){
 				xfast_node<T>* pp = u->pre;
 				xfast_node<T>* ss = u->nxt;
@@ -252,7 +229,6 @@ class xfast_trie{
 				int waste = *(u->key);
 				u->bstroot = nullptr;
 				delete_xfast_node(root,waste,logM);
-				//if (count(waste) != 0) printf("................................\n");
 				now = new xfast_node<T>((change.first)->min());
 				now->bstroot = change.first;
 				walk(root,*(now->key),logM);
@@ -264,36 +240,22 @@ class xfast_trie{
 				now2->pre = now;
 				now2->nxt = ss;
 				if (ss != nullptr) ss->pre = now2;
+				now = now2;
 				walk(root,*(now2->key),logM);
-				//if (now -> bstroot == nullptr || now2->bstroot == nullptr) printf("caonima 6786788*********\n");
 			}
-			/*
-			printf("start for\n");
-			for (int i = 0;i < 100;i ++){
-				xfast_node<T>*u = predecessor(i);
-				//printf("%d\n",i);
-				if (u != nullptr && u->bstroot == nullptr){
-					printf("%d lisheng \n",i);
-					break;
-				}
-			}
-			*/
 		}
 		int check(xfast_node<T>*u){
 			if (u == nullptr) return 1;
 			int ret = 1;
 			ret &= check(u->son[0]);
 			ret &= check(u->son[1]);
-			if ((*(u->key)) >= 100) ret = 0,printf("asdsadasdasdasdasdasdasdasdsadasdasdasdsadasdsad\n");
 			return ret;
 		}
 		bool insert(int key,T value){
 			if (count(key) == 1){
 				return false;
 			}
-			//printf("start pre\n");
 			xfast_node<T>* u = predecessor(key);
-			//printf("finish pre\n");
 			if (u != nullptr){
 				u->bstroot->insert(key,value);
 			}else{
@@ -304,36 +266,11 @@ class xfast_trie{
 				}
 				now = u = new xfast_node<T>(key);
 				if (v != nullptr) v->pre = u;
-				//printf("%d\n",v == nullptr);
 				u->nxt = v;
 				u->bstroot->insert(key,value);
 				walk(root,key,logM);
 			}
-			//printf("start dealwithsize\n");
 			dealwithsize(u);
-			//printf("finish dealwithsize\n");
-			//printf("start for\n");
-			int past = -1;
-			for (int i = 0;i < 100;i ++){
-				xfast_node<T>*u = predecessor(i);
-				//printf("%d\n",i);
-				/*
-				if (u != nullptr){
-					if (u->bstroot->max() >= past) past = u->bstroot->max();
-						else {
-							printf("invalid\n");
-							break;
-						}
-				}
-				*/
-				if (u != nullptr && u->bstroot == nullptr){
-					
-					printf("%d lisheng \n",i);
-					break;
-				}/*else if (u != nullptr) printf("%d\n",u->bstroot->min());*/
-			}
-			printf("special judge = %d\n",check(root));
-			//printf("finish for\n");
 			return true;
 		}
 		bool erase(const int &key){
@@ -360,6 +297,10 @@ class xfast_trie{
 					now = new xfast_node<T>(tmp->min());
 					now->bstroot = tmp;
 					walk(root,*(now->key),logM);
+					if (pp != nullptr) pp->nxt = now;
+					if (ss != nullptr) ss->pre = now;
+					now -> pre = pp;
+					now -> nxt = ss;
 					dealwithsize(now);
 				}else u->bstroot = tmp;
 			}
@@ -367,12 +308,8 @@ class xfast_trie{
 		}
 		int count(int key){
 			if (root == nullptr) return 0;
-			//printf("start pre\n");
 			xfast_node<T>* u = predecessor(key);
-			//printf("end pre\n");
 			if (u == nullptr) return 0;
-			//printf("start geq\n");
-			//printf("%d %d\n",u->bstroot != nullptr,*(u->key));
 			int store = (u->bstroot->geq(key)).first;
 			return store == key;
 		}
